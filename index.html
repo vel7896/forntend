@@ -1,183 +1,213 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quick Quiz</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Quiz Application</title>
   <style>
-    /* Basic styles */
-    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-    body{margin:0;background:#f4f6f8;color:#0b1a2b;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
-    .card{width:100%;max-width:720px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(11,26,43,0.08);padding:24px}
-    h1{margin:0 0 12px;font-size:1.25rem}
-    .meta{display:flex;gap:12px;align-items:center;margin-bottom:16px;font-size:0.95rem;color:#5b6b7a}
-    .question{font-size:1.1rem;margin:8px 0 18px}
-    .answers{display:grid;gap:10px}
-    button.option{padding:12px 14px;border-radius:8px;border:1px solid #e3e7eb;background:#fff;text-align:left;cursor:pointer;font-size:0.98rem}
-    button.option:hover{transform:translateY(-1px)}
-    button.option.correct{background:#e6ffef;border-color:#45b36b;color:#0a3b1f}
-    button.option.wrong{background:#fff0f0;border-color:#d9534f;color:#6c1b1b}
-    .controls{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
-    .score{font-weight:600}
-    .small{font-size:0.9rem;color:#647482}
-    .hidden{display:none}
-    .center{display:flex;justify-content:center}
-    @media (max-width:520px){.card{padding:18px}}
+    /* Global Style */
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Quiz Container */
+    .quiz-container {
+      background: #ffffff;
+      color: #333;
+      width: 80%;
+      max-width: 600px;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    /* Title */
+    h1 {
+      color: #2575fc;
+      margin-bottom: 15px;
+    }
+
+    /* Question */
+    .question {
+      font-size: 20px;
+      margin: 15px 0;
+      font-weight: bold;
+      color: #444;
+    }
+
+    /* Options */
+    .options button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      background: #f1f1f1;
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    .options button:hover {
+      background: #2575fc;
+      color: white;
+      transform: scale(1.03);
+    }
+
+    /* Correct & Wrong Answer */
+    .correct {
+      background: #4CAF50 !important; /* Green */
+      color: #fff;
+    }
+
+    .wrong {
+      background: #E53935 !important; /* Red */
+      color: #fff;
+    }
+
+    /* Next Button */
+    #next-btn {
+      margin-top: 15px;
+      padding: 12px 25px;
+      font-size: 16px;
+      background: linear-gradient(45deg, #ff6a00, #ee0979);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: 0.3s;
+      display: none;
+    }
+
+    #next-btn:hover {
+      transform: scale(1.1);
+      background: linear-gradient(45deg, #ee0979, #ff6a00);
+    }
+
+    /* Score Section */
+    #score {
+      font-size: 22px;
+      font-weight: bold;
+      color: #6a11cb;
+      margin-top: 20px;
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
-  <main class="card" id="app" aria-live="polite">
-    <h1>Quick Quiz</h1>
-    <div class="meta">
-      <div class="small">Question <span id="qIndex">0</span> / <span id="qTotal">0</span></div>
-      <div class="small score">Score: <span id="score">0</span></div>
-    </div>
-
-    <div id="quizArea">
-      <div class="question" id="question">Loading...</div>
-      <div class="answers" id="answers"></div>
-
-      <div class="controls">
-        <button id="nextBtn" class="hidden">Next</button>
-        <div class="center">
-          <button id="restartBtn" class="hidden">Restart</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="summary" class="hidden">
-      <h2>Results</h2>
-      <p>Your final score: <strong id="finalScore">0</strong></p>
-      <button id="againBtn">Try Again</button>
-    </div>
-  </main>
+  <div class="quiz-container">
+    <h1>Online Quiz</h1>
+    <div class="question" id="question">Loading question...</div>
+    <div class="options" id="options"></div>
+    <button id="next-btn">Next</button>
+    <div id="score"></div>
+  </div>
 
   <script>
-    /***********************
-     * Simple Quiz App JS
-     ***********************/
-    (function () {
-      // Sample local questions (you can replace with API fetch)
-      const questions = [
-        { q: 'Which language is used to style web pages?', a: ['HTML', 'CSS', 'Python', 'SQL'], correct: 1 },
-        { q: 'Which tag creates a hyperlink?', a: ['<img>', '<link>', '<a>', '<nav>'], correct: 2 },
-        { q: 'Which method adds an event listener in JS?', a: ['addEvent()', 'on()', 'addEventListener()', 'listen()'], correct: 2 },
-        { q: 'Which attribute selects by id in CSS?', a: ['.', '#', '$', '*'], correct: 1 }
-      ];
-
-      // UI nodes
-      const qIndexEl = document.getElementById('qIndex');
-      const qTotalEl = document.getElementById('qTotal');
-      const questionEl = document.getElementById('question');
-      const answersEl = document.getElementById('answers');
-      const nextBtn = document.getElementById('nextBtn');
-      const restartBtn = document.getElementById('restartBtn');
-      const scoreEl = document.getElementById('score');
-      const summaryEl = document.getElementById('summary');
-      const quizArea = document.getElementById('quizArea');
-      const finalScoreEl = document.getElementById('finalScore');
-      const againBtn = document.getElementById('againBtn');
-
-      let index = 0;
-      let score = 0;
-      const total = questions.length;
-
-      function init() {
-        index = 0;
-        score = 0;
-        qTotalEl.textContent = total;
-        scoreEl.textContent = score;
-        summaryEl.classList.add('hidden');
-        quizArea.classList.remove('hidden');
-        renderQuestion();
+    // Quiz Questions
+    const questions = [
+      {
+        question: "Which language is used for styling web pages?",
+        options: ["HTML", "JQuery", "CSS", "XML"],
+        answer: "CSS"
+      },
+      {
+        question: "Which is not a JavaScript Framework?",
+        options: ["Python Script", "JQuery", "Django", "NodeJS"],
+        answer: "Django"
+      },
+      {
+        question: "Which is used for Connect To Database?",
+        options: ["PHP", "HTML", "JS", "All"],
+        answer: "PHP"
+      },
+      {
+        question: "Which of the following is a markup language?",
+        options: ["HTML", "CSS", "JavaScript", "PHP"],
+        answer: "HTML"
       }
+    ];
 
-      function renderQuestion() {
-        const item = questions[index];
-        qIndexEl.textContent = index + 1;
-        questionEl.textContent = item.q;
-        answersEl.innerHTML = '';
-        nextBtn.classList.add('hidden');
-        restartBtn.classList.add('hidden');
+    let currentQuestionIndex = 0;
+    let score = 0;
 
-        item.a.forEach((text, i) => {
-          const btn = document.createElement('button');
-          btn.className = 'option';
-          btn.type = 'button';
-          btn.textContent = text;
-          btn.setAttribute('data-idx', i);
-          btn.onclick = () => chooseAnswer(i, btn);
-          answersEl.appendChild(btn);
-        });
-      }
+    const questionElement = document.getElementById("question");
+    const optionsElement = document.getElementById("options");
+    const nextButton = document.getElementById("next-btn");
+    const scoreElement = document.getElementById("score");
 
-      function chooseAnswer(choice, btn) {
-        // prevent double click
-        if (answersEl.querySelector('.correct') || answersEl.querySelector('.wrong')) return;
+    function showQuestion() {
+      resetState();
+      let currentQuestion = questions[currentQuestionIndex];
+      questionElement.textContent = currentQuestion.question;
 
-        const item = questions[index];
-        const buttons = answersEl.querySelectorAll('button.option');
-        buttons.forEach(b => b.disabled = true);
-
-        if (choice === item.correct) {
-          btn.classList.add('correct');
-          score++;
-          scoreEl.textContent = score;
-        } else {
-          btn.classList.add('wrong');
-          // highlight correct
-          const correctBtn = answersEl.querySelector('button[data-idx="' + item.correct + '"]');
-          if (correctBtn) correctBtn.classList.add('correct');
-        }
-
-        // show next or finish
-        if (index < total - 1) {
-          nextBtn.classList.remove('hidden');
-        } else {
-          restartBtn.classList.remove('hidden');
-          finish();
-        }
-      }
-
-      function finish() {
-        finalScoreEl.textContent = score + ' / ' + total;
-        // Keep summary hidden till user clicks Restart if you want
-      }
-
-      nextBtn.addEventListener('click', () => {
-        index++;
-        renderQuestion();
+      currentQuestion.options.forEach(option => {
+        const button = document.createElement("button");
+        button.textContent = option;
+        button.addEventListener("click", () => selectAnswer(button, currentQuestion.answer));
+        optionsElement.appendChild(button);
       });
+    }
 
-      restartBtn.addEventListener('click', () => {
-        // Show summary then restart
-        quizArea.classList.add('hidden');
-        summaryEl.classList.remove('hidden');
-      });
+    function resetState() {
+      nextButton.style.display = "none";
+      while (optionsElement.firstChild) {
+        optionsElement.removeChild(optionsElement.firstChild);
+      }
+    }
 
-      againBtn.addEventListener('click', init);
-
-      // Keyboard support: 1-4 for options, Enter for Next/Restart
-      document.addEventListener('keydown', (e) => {
-        const key = e.key;
-        if (key >= '1' && key <= '4') {
-          const n = Number(key) - 1;
-          const btn = answersEl.querySelector('button[data-idx="' + n + '"]');
-          if (btn) btn.click();
-        } else if (key === 'Enter') {
-          if (!nextBtn.classList.contains('hidden')) nextBtn.click();
-          else if (!restartBtn.classList.contains('hidden')) restartBtn.click();
+    function selectAnswer(button, correctAnswer) {
+      const selectedAnswer = button.textContent;
+      if (selectedAnswer === correctAnswer) {
+        button.classList.add("correct");
+        score++;
+      } else {
+        button.classList.add("wrong");
+      }
+      Array.from(optionsElement.children).forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === correctAnswer) {
+          btn.classList.add("correct");
         }
       });
+      nextButton.style.display = "inline-block";
+    }
 
-      // initialize
-      init();
+    function showScore() {
+      resetState();
+      questionElement.textContent = "Quiz Completed!";
+      scoreElement.textContent = `Your Score: ${score} / ${questions.length}`;
+    }
 
-      // OPTIONAL: Example of how to fetch from Open Trivia DB
-      // fetch('https://opentdb.com/api.php?amount=5&type=multiple').then(r=>r.json()).then(data=>{
-      //   // transform data.results into questions[] used above
-      // });
-    })();
+    nextButton.addEventListener("click", () => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        showQuestion();
+      } else {
+        showScore();
+      }
+    });
+
+    // Start Quiz
+    showQuestion();
   </script>
 </body>
 </html>
